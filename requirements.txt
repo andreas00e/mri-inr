@@ -3,3 +3,4 @@ os
 h5py 
 matplotlib 
 numpy
+tensorboard
