@@ -4,9 +4,9 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange
 from torchvision import models
+from torchvision.models import resnet18, ResNet18_Weights
 
 # helpers
-
 def exists(val):
     return val is not None
 
@@ -106,9 +106,6 @@ class SirenNet(nn.Module):
         for layer, mod in zip(self.layers, mods):
             x = layer(x)
 
-            if exists(mod):
-                x *= rearrange(mod, 'd -> () d')
-
         return self.last_layer(x)
 
 # modulatory feed forward network
@@ -133,7 +130,7 @@ class Modulator(nn.Module):
         for layer in self.layers:
             x = layer(x)
             hiddens.append(x)
-            x = torch.cat((x, z))
+            x = torch.cat((x, z), dim=1)
 
         return tuple(hiddens)
 
@@ -145,12 +142,12 @@ class Encoder(nn.Module):
         
         # Add a fully connected layer to map to the desired latent vector size
         self.fc = nn.Linear(num_features, latent_dim)
+        self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
     def load_pretrained_resnet(self, feature_extract=True, use_pretrained=True):
         # Load a pretrained ResNet model
-        model = models.resnet18(pretrained=use_pretrained)
+        model = models.resnet18(weights=ResNet18_Weights.DEFAULT)
 
-        # If we are using the model just for feature extraction, we freeze all parameters
         if feature_extract:
             for param in model.parameters():
                 param.requires_grad = False
@@ -163,6 +160,7 @@ class Encoder(nn.Module):
     
     def forward(self, x):
         # Use the ResNet for feature extraction
+        x = x.unsqueeze(1)
         features = self.resnet(x)
         # Map features to the latent vector space
         latent_vector = self.fc(features)
@@ -190,7 +188,6 @@ class ModulatedSiren(nn.Module):
 
         self.image_width = image_width
         self.image_height = image_height
-        self.dim_in = dim_in
         self.dim_hidden = dim_hidden
         self.dim_out = dim_out
         self.num_layers = num_layers
@@ -214,15 +211,32 @@ class ModulatedSiren(nn.Module):
             num_layers = num_layers
         )
 
+        self.encoder = Encoder(latent_dim = latent_dim)
+
         tensors = [torch.linspace(-1, 1, steps = image_height), torch.linspace(-1, 1, steps = image_width)]
         mgrid = torch.stack(torch.meshgrid(*tensors, indexing = 'ij'), dim=-1)
-        mgrid = rearrange(mgrid, 'h w c -> (h w) c')
+        mgrid = rearrange(mgrid, 'h w b -> (h w) b')
         self.register_buffer('grid', mgrid)
 
-    def forward(self, img, coordinate):
-        
+    def forward(self, img):
+        batch_size = img.shape[0]
         latent = self.encoder(img) 
         mods = self.modulator(latent) 
-        coords = self.grid.clone().detach().requires_grad_()
+        coords = self.grid.clone().detach().repeat(batch_size, 1, 1).requires_grad_()
         out = self.net(coords, mods)
+        out = rearrange(out, 'b (h w) c -> () b c h w', h = self.image_height, w = self.image_width)
+        out = out.squeeze(0).squeeze(1)
+        return out
+    
+    def upscale(self, img, scale_factor): 
+        img = img.unsqueeze(0)
+        # print image shape with description
+        latent = self.encoder(img) 
+        mods = self.modulator(latent) 
+        tensors = [torch.linspace(-1, 1, steps = self.image_height * scale_factor), torch.linspace(-1, 1, steps = self.image_width * scale_factor)]
+        mgrid = torch.stack(torch.meshgrid(*tensors, indexing = 'ij'), dim=-1)
+        coords = rearrange(mgrid, 'h w b -> (h w) b')
+        out = self.net(coords, mods)
+        out = rearrange(out, '(h w) c -> () c h w', h = self.image_height * scale_factor, w = self.image_width * scale_factor)
+        out = out.squeeze(0)
         return out

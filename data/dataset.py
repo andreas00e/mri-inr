@@ -9,7 +9,7 @@ from fastmri.data import transforms as T
 from fastmri.data.subsample import RandomMaskFunc
 
 class MRIDataset(Dataset):
-    def __init__(self, path: str, transform: Optional[Callable] = None, undersampled = True):
+    def __init__(self, path: str, filter_func: Optional[Callable] = None, transform: Optional[Callable] = None, undersampled = True):
         """
         Args:
             path: Path to files
@@ -21,15 +21,16 @@ class MRIDataset(Dataset):
         self.samples = []
         self.undersampled = undersampled
 
-        self._prepare_dataset()
+        self._prepare_dataset(filter_func)
 
-    def _prepare_dataset(self):
+    def _prepare_dataset(self, filter_func: Optional[Callable] = None):
         """ Prepare the dataset by listing all file paths and the number of slices per file. """
         for file_path in self.files:
-            with h5py.File(file_path, 'r') as hf:
-                num_slices = hf['kspace'].shape[0]
-                for s in range(num_slices):
-                    self.samples.append((file_path, s))
+            if (filter_func and filter_func(file_path)) or not filter_func:
+                with h5py.File(file_path, 'r') as hf:
+                    num_slices = hf['kspace'].shape[0]
+                    for s in range(num_slices):
+                        self.samples.append((file_path, s))
 
     def __len__(self):
         return len(self.samples)
@@ -47,6 +48,7 @@ class MRIDataset(Dataset):
             image = fastmri.ifft2c(kspace_tensor)           # Apply Inverse Fourier Transform to get the complex image
             image_abs = fastmri.complex_abs(image) 
 
+        image_abs = image_abs.float()
         return image_abs
 
 # Example transform function
