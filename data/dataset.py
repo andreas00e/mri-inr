@@ -50,16 +50,3 @@ class MRIDataset(Dataset):
 
         image_abs = image_abs.float()
         return image_abs
-
-# Example transform function
-def normalize_and_to_tensor(kspace, mask):
-    # Normalize k-space by scaling by the max value within the k-space (a simple normalization approach)
-    kspace_abs = np.abs(kspace)
-    max_val = np.max(kspace_abs)
-    kspace_normalized = kspace / max_val if max_val > 0 else kspace
-
-    # Convert to PyTorch tensor
-    kspace_tensor = torch.from_numpy(kspace_normalized).float()
-    mask_tensor = torch.from_numpy(mask).float() if mask is not None else None
-
-    return kspace_tensor, mask_tensor
