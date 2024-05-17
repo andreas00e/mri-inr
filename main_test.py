@@ -22,7 +22,7 @@ def main():
     net = SirenNet(
         dim_in = 2,                        # input dimension, ex. 2d coor
         dim_hidden = 1024,                  # hidden dimension
-        dim_out = 3,                       # output dimension, ex. rgb value
+        dim_out = 1,                       # output dimension, ex. rgb value
         num_layers = 5,                    # number of layers
         w0_initial = 30.,                   # different signals may require different omega_0 in the first layer - this is a hyperparameter, 
         dropout=0.1
@@ -38,7 +38,7 @@ def main():
     trainer = Trainer(model=wrapper, device=device, train_dataset=train_dataset, val_dataset=train_dataset, batch_size=1)
 
     # Start training
-    trainer.train(num_epochs=300)
+    trainer.train(num_epochs=150)
 
 if __name__ == '__main__':
     main()

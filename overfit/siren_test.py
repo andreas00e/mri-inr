@@ -172,7 +172,7 @@ class SirenWrapper(nn.Module):
 
         coords = self.grid.clone().detach().requires_grad_()
         out = self.net(coords, mods)
-        out = rearrange(out, '(h w) c -> () c h w', h = self.image_height, w = self.image_width)
+        out = rearrange(out, '(h w) c -> () c h w', h = self.image_height, w = self.image_width).squeeze(0)
 
         if exists(img):
             return F.mse_loss(out, img)

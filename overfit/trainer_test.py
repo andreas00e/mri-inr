@@ -30,9 +30,8 @@ class Trainer:
             training_loss = 0
             for train_iteration, img_batch in training_loop:
                 self.optimizer.zero_grad()
-                img_batch = rearrange(img_batch, 'b h w c -> () b c h w', h = self.train_dataset[0].shape[0], w = self.train_dataset[0].shape[1])
                 img_batch = img_batch.to(self.device)
-                loss = self.model(img_batch.squeeze(0))
+                loss = self.model(img_batch)
                 loss.backward()
                 self.optimizer.step()
 
