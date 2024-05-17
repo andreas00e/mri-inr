@@ -31,6 +31,7 @@ class MRIDataset(Dataset):
                     num_slices = hf['kspace'].shape[0]
                     for s in range(num_slices):
                         self.samples.append((file_path, s))
+                        return
 
     def __len__(self):
         return len(self.samples)
@@ -49,4 +50,9 @@ class MRIDataset(Dataset):
             image_abs = fastmri.complex_abs(image) 
 
         image_abs = image_abs.float()
+
+        # apply transformations 
+        if self.transform:
+            image_abs = self.transform(image_abs)
+
         return image_abs

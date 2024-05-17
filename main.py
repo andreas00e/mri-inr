@@ -1,15 +1,22 @@
 import torch
 from data.dataset import MRIDataset
-from networks.networks import ModulatedSiren
+from networks.networks import ModulatedSiren, SirenNet
 from trainer.trainer import Trainer
+from torchvision import transforms, datasets
 
 def main():
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    transform = transforms.Compose([
+        transforms.Lambda(lambda x: x.unsqueeze(0)),  # Ensure there is a channel dimension
+        transforms.Normalize(mean=[0.5], std=[0.5]), 
+        transforms.Lambda(lambda x: x.squeeze(0)),    
+        ])
+
     # Load dataset
     train_dataset = MRIDataset(
-        path='../../dataset/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x)
+        path='../../dataset/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform
     )
 
     val_dataset = MRIDataset(
@@ -32,7 +39,7 @@ def main():
     trainer = Trainer(model=model, device=device, train_dataset=train_dataset, val_dataset=val_dataset, batch_size=1)
 
     # Start training
-    trainer.train(num_epochs=2)
+    trainer.train(num_epochs=1)
 
 if __name__ == '__main__':
     main()

@@ -6,6 +6,8 @@ from datetime import datetime
 from tqdm import tqdm
 from utils.visualization import show_batch, show_image
 import sys
+from einops import rearrange
+import matplotlib.pyplot as plt
 
 def create_tqdm_bar(iterable, desc):
     return tqdm(enumerate(iterable),total=len(iterable), ncols=150, desc=desc, file=sys.stdout)
@@ -15,9 +17,7 @@ class Trainer:
         self.model = model.to(device)
         self.device = device
         self.train_dataset = train_dataset
-        self.val_dataset = val_dataset
         self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        self.val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.writer = SummaryWriter(log_dir=f"runs/{datetime.now().strftime('%Y%m%d-%H%M%S')}")
@@ -30,8 +30,8 @@ class Trainer:
             training_loss = 0
             for train_iteration, img_batch in training_loop:
                 self.optimizer.zero_grad()
-                outputs = self.model(img_batch)
-                loss = self.criterion(outputs, img_batch)
+                img_batch = rearrange(img_batch, 'b h w c -> () b c h w', h = self.train_dataset[0].shape[0], w = self.train_dataset[0].shape[1])
+                loss = self.model(img_batch.squeeze(0))
                 loss.backward()
                 self.optimizer.step()
 
@@ -44,28 +44,18 @@ class Trainer:
                 # Update the tensorboard logger.
                 self.writer.add_scalar('Training Loss', loss.item(), epoch * len(self.train_loader) + train_iteration)
 
-            # Validation
-            self.model.eval()
-            val_loop = create_tqdm_bar(self.val_loader, desc=f'Validation Epoch [{epoch}/{num_epochs}]')
-            validation_loss = 0
-            with torch.no_grad():
-                for val_iteration, img_batch in val_loop:
-                    img_batch = img_batch.to(self.device)
-                    outputs = self.model(img_batch)
-                    loss = self.criterion(outputs, img_batch)
-                    validation_loss += loss.item()
+                #for name, param in self.model.named_parameters():
+                 #   if param.grad is not None:
+                  #      self.writer.add_histogram(f'Gradients/{name}', param.grad, epoch * len(self.train_loader) + train_iteration)
 
-                    # Update the progress bar.
-                    val_loop.set_postfix(val_loss = "{:.8f}".format(validation_loss / (val_iteration + 1)))
-                    val_loop.refresh()
 
-                    # Update the tensorboard logger.
-                    self.writer.add_scalar(f'Validation Loss', validation_loss / (val_iteration + 1), epoch * len(self.val_loader) + val_iteration)
-        
         self.writer.close()
 
         with torch.no_grad():
             self.model.eval()
-            upscaled_image = self.model(self.train_dataset[0].unsqueeze(0))
-            show_image(upscaled_image)
-            show_image(self.train_dataset[0])
+            img = self.model()
+            # display rgb image
+            plt.imshow(img.squeeze().permute(1, 2, 0))
+            plt.axis('off')  # Turn off axis numbers and ticks
+            plt.savefig('cat_out.png', bbox_inches='tight', pad_inches=0)
+            plt.close()
