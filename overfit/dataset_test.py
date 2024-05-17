@@ -16,7 +16,7 @@ class TestDataset(Dataset):
             path: Path to files
             transform: Optional callable to apply to the data (e.g., normalization, augmentation).
         """
-        self.samples = ["/Users/matteowohlrapp/Documents/Uni/Master/SoSe_24_L/ADLM/code/mri-inr/cat.png"]
+        self.samples = ["./cat.png"]
 
         self.image = Image.open(self.samples[0])
         self.image = np.array(self.image, dtype=np.float32)  # Ensure data type is float for precision in normalization

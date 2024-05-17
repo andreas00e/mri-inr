@@ -1,6 +1,7 @@
 fastmri
-os
 h5py 
 matplotlib 
 numpy
 tensorboard
+requests
+einops
