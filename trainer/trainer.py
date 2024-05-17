@@ -30,7 +30,7 @@ class Trainer:
             training_loss = 0
             for train_iteration, img_batch in training_loop:
                 self.optimizer.zero_grad()
-                outputs = self.model(img_batch)
+                outputs = self.model(img_batch.to(self.device))
                 loss = self.criterion(outputs, img_batch)
                 loss.backward()
                 self.optimizer.step()

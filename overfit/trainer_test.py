@@ -31,6 +31,7 @@ class Trainer:
             for train_iteration, img_batch in training_loop:
                 self.optimizer.zero_grad()
                 img_batch = rearrange(img_batch, 'b h w c -> () b c h w', h = self.train_dataset[0].shape[0], w = self.train_dataset[0].shape[1])
+                img_batch = img_batch.to(self.device)
                 loss = self.model(img_batch.squeeze(0))
                 loss.backward()
                 self.optimizer.step()
@@ -54,6 +55,9 @@ class Trainer:
         with torch.no_grad():
             self.model.eval()
             img = self.model()
+            if img.is_cuda:
+                img = img.cpu()
+
             # display rgb image
             plt.imshow(img.squeeze().permute(1, 2, 0))
             plt.axis('off')  # Turn off axis numbers and ticks
