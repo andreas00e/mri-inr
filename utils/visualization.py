@@ -44,28 +44,24 @@ def show_image(image, cmap='gray'):
 
 def upscale_from_siren(model_path = 'model.pth', upscale_factor=4, file_name='output'): 
 
-    net = SirenNet(
-        dim_in = 2,                        # input dimension, ex. 2d coor
-        dim_hidden = 256,                  # hidden dimension
-        dim_out = 1,                       # output dimension, ex. rgb value
-        num_layers = 5,                    # number of layers
-        w0_initial = 30.,                   # different signals may require different omega_0 in the first layer - this is a hyperparameter, 
-        dropout=0
+    model = ModulatedSiren(
+            image_width=320,  # Adjust based on actual image dimensions
+            image_height=640,  # Adjust based on actual image dimensions
+            dim_in=1,
+            dim_hidden=256,
+            dim_out=1, 
+            num_layers=5,
+            latent_dim=256,
+            dropout=0.1,
     )
 
-    wrapper = ModulatedSiren(
-        net,
-        image_width = 320,
-        image_height = 640
-    )
-
-    wrapper.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
 
     with torch.no_grad():
-        wrapper.eval()
+        model.eval()
 
-        img = wrapper.upscale(upscale_factor)
-        original_image = wrapper()
+        img = model.upscale(upscale_factor)
+        original_image = model()
 
         if img.is_cuda:
             img = img.cpu()
