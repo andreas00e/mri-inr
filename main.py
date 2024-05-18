@@ -16,11 +16,7 @@ def main():
 
     # Load dataset
     train_dataset = MRIDataset(
-        path='../../dataset/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform
-    )
-
-    val_dataset = MRIDataset(
-        path='../../dataset/brain/singlecoil_val', filter_func=(lambda x: 'FLAIR' in x)
+        path='../../dataset/fastmri/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform, number_of_samples = 1
     )
 
     # Initialize the model
@@ -33,13 +29,14 @@ def main():
         num_layers=5,
         latent_dim=256,
         dropout=0.1,
+        modulate = False
     )
 
     # Create trainer instance
-    trainer = Trainer(model=model, device=device, train_dataset=train_dataset, val_dataset=val_dataset, batch_size=1)
+    trainer = Trainer(model=model, device=device, train_dataset=train_dataset, batch_size=1)
 
     # Start training
-    trainer.train(num_epochs=1)
+    trainer.train(num_epochs=15000)
 
 if __name__ == '__main__':
     main()
