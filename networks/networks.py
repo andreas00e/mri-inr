@@ -103,6 +103,8 @@ class SirenNet(nn.Module):
             x = layer(x)
 
             if mod is not None:
+                print("Applying modulations")
+                print(x.shape)
                 x *= rearrange(mod, 'd -> () d')
 
         return self.last_layer(x)

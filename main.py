@@ -16,7 +16,7 @@ def main():
 
     if args.visualize:
         if args.visualize == 'siren':
-            upscale_from_siren(model_path="model_checkpoints/siren_model.pth", upscale_factor=2, file_name="siren_upscaled_image.png")
+            upscale_from_siren(model_path="model_checkpoints/siren_model.pth", upscale_factor=2, file_name="siren")
         elif args.visualize == 'modulated':
             print("Not implemented yet.")
     else: 
@@ -42,7 +42,7 @@ def main():
             num_layers=5,
             latent_dim=256,
             dropout=0.1,
-            modulate = False
+            modulate = True
         )
 
         # Create trainer instance
