@@ -6,10 +6,6 @@ from einops import rearrange
 from torchvision import models
 from torchvision.models import resnet18, ResNet18_Weights
 
-# helpers
-def exists(val):
-    return val is not None
-
 def cast_tuple(val, repeat = 1):
     return val if isinstance(val, tuple) else ((val,) * repeat)
 
@@ -53,7 +49,7 @@ class Siren(nn.Module):
         w_std = (1 / dim) if self.is_first else (math.sqrt(c / dim) / w0)
         weight.uniform_(-w_std, w_std)
 
-        if exists(bias):
+        if bias is not None:
             bias.uniform_(-w_std, w_std)
 
     def forward(self, x):
@@ -97,7 +93,7 @@ class SirenNet(nn.Module):
 
             self.layers.append(layer)
 
-        final_activation = nn.Identity() if not exists(final_activation) else final_activation
+        final_activation = nn.Identity() if final_activation is None else final_activation
         self.last_layer = Siren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, activation = final_activation)
 
     def forward(self, x, mods = None):
@@ -105,6 +101,9 @@ class SirenNet(nn.Module):
 
         for layer, mod in zip(self.layers, mods):
             x = layer(x)
+
+            if mods is not None:
+                x *= rearrange(mod, 'd -> () d')
 
         return self.last_layer(x)
 
@@ -183,6 +182,7 @@ class ModulatedSiren(nn.Module):
         use_bias = True,
         final_activation = None,
         dropout = 0., 
+        modulate = True
     ):        
         super().__init__()
 
@@ -192,6 +192,7 @@ class ModulatedSiren(nn.Module):
         self.dim_out = dim_out
         self.num_layers = num_layers
         self.latent_dim = latent_dim
+        self.modulate = modulate
 
         self.net = SirenNet(
             dim_in = 2,
@@ -218,25 +219,27 @@ class ModulatedSiren(nn.Module):
         mgrid = rearrange(mgrid, 'h w b -> (h w) b')
         self.register_buffer('grid', mgrid)
 
-    def forward(self, img):
+    def forward(self, img = None):
         batch_size = img.shape[0]
-        latent = self.encoder(img) 
-        mods = self.modulator(latent) 
+
+        mods = self.modulator(self.encoder(img)) if self.modulate and img is not None else None
+
         coords = self.grid.clone().detach().repeat(batch_size, 1, 1).requires_grad_()
+
         out = self.net(coords, mods)
         out = rearrange(out, 'b (h w) c -> () b c h w', h = self.image_height, w = self.image_width)
         out = out.squeeze(0).squeeze(1)
         return out
     
-    def upscale(self, img, scale_factor): 
-        img = img.unsqueeze(0)
-        # print image shape with description
-        latent = self.encoder(img) 
-        mods = self.modulator(latent) 
+    def upscale(self, scale_factor, img = None): 
+        mods = self.modulator(self.encoder(img)) if self.modulate and img is not None else None
+
         tensors = [torch.linspace(-1, 1, steps = self.image_height * scale_factor), torch.linspace(-1, 1, steps = self.image_width * scale_factor)]
         mgrid = torch.stack(torch.meshgrid(*tensors, indexing = 'ij'), dim=-1)
         coords = rearrange(mgrid, 'h w b -> (h w) b')
+
         out = self.net(coords, mods)
         out = rearrange(out, '(h w) c -> () c h w', h = self.image_height * scale_factor, w = self.image_width * scale_factor)
         out = out.squeeze(0)
         return out
+    
