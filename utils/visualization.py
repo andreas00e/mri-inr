@@ -41,7 +41,6 @@ def show_image(image, cmap='gray'):
     plt.axis('off')
     plt.show()
 
-
 def upscale_from_siren(model_path = 'model.pth', upscale_factor=4, file_name='output'): 
 
     model = ModulatedSiren(

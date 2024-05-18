@@ -11,13 +11,14 @@ def create_tqdm_bar(iterable, desc):
     return tqdm(enumerate(iterable),total=len(iterable), ncols=150, desc=desc, file=sys.stdout)
 
 class Trainer:
-    def __init__(self, model, device, train_dataset, val_dataset, lr=1e-4, batch_size=1, validation=False, output_name = "output"):
+    def __init__(self, model, device, train_dataset, val_dataset = None, lr=1e-4, batch_size=1, validation=False, output_name = "output"):
         self.model = model.to(device)
         self.device = device
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
         self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        self.val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+        if val_dataset:
+            self.val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.writer = SummaryWriter(log_dir=f"runs/{datetime.now().strftime('%Y%m%d-%H%M%S')}")
@@ -31,8 +32,9 @@ class Trainer:
             training_loop = create_tqdm_bar(self.train_loader, desc=f'Training Epoch [{epoch}/{num_epochs}]')
             training_loss = 0
             for train_iteration, img_batch in training_loop:
+                img_batch = img_batch.to(self.device)
                 self.optimizer.zero_grad()
-                outputs = self.model(img_batch.to(self.device))
+                outputs = self.model()
                 loss = self.criterion(outputs, img_batch)
                 loss.backward()
                 self.optimizer.step()
@@ -47,7 +49,7 @@ class Trainer:
                 self.writer.add_scalar('Training Loss', loss.item(), epoch * len(self.train_loader) + train_iteration)
 
             # Validation
-            if self.validation:
+            if self.validation and self.val_dataset is not None:
                 self.model.eval()
                 val_loop = create_tqdm_bar(self.val_loader, desc=f'Validation Epoch [{epoch}/{num_epochs}]')
                 validation_loss = 0

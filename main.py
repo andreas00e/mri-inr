@@ -5,6 +5,7 @@ from trainer.trainer import Trainer
 from torchvision import transforms, datasets
 import argparse
 from utils.visualization import upscale_from_siren
+from data.transformations import scale_mri_tensor_advanced
 
 def main():
     parser = argparse.ArgumentParser(description="Train a SIREN network on MRI data")
@@ -23,18 +24,12 @@ def main():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         transform = transforms.Compose([
-            transforms.Lambda(lambda x: x.unsqueeze(0)),  # Ensure there is a channel dimension
-            transforms.Normalize(mean=[0.5], std=[0.5]), 
-            transforms.Lambda(lambda x: x.squeeze(0)),    
+            scale_mri_tensor_advanced
             ])
 
         # Load dataset
         train_dataset = MRIDataset(
-            path='../../dataset/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform
-        )
-
-        val_dataset = MRIDataset(
-            path='../../dataset/brain/singlecoil_val', filter_func=(lambda x: 'FLAIR' in x)
+            path='../../dataset/fastmri/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform, number_of_samples = 1
         )
 
         # Initialize the model
@@ -47,13 +42,14 @@ def main():
             num_layers=5,
             latent_dim=256,
             dropout=0.1,
+            modulate = False
         )
 
         # Create trainer instance
-        trainer = Trainer(model=model, device=device, train_dataset=train_dataset, val_dataset=val_dataset, batch_size=1)
+        trainer = Trainer(model=model, device=device, train_dataset=train_dataset, batch_size=1)
 
         # Start training
-        trainer.train(num_epochs=1)
+        trainer.train(num_epochs=15000)
 
 if __name__ == '__main__':
     main()

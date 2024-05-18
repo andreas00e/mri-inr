@@ -102,7 +102,7 @@ class SirenNet(nn.Module):
         for layer, mod in zip(self.layers, mods):
             x = layer(x)
 
-            if mods is not None:
+            if mod is not None:
                 x *= rearrange(mod, 'd -> () d')
 
         return self.last_layer(x)
@@ -220,7 +220,7 @@ class ModulatedSiren(nn.Module):
         self.register_buffer('grid', mgrid)
 
     def forward(self, img = None):
-        batch_size = img.shape[0]
+        batch_size = img.shape[0] if img is not None else 1
 
         mods = self.modulator(self.encoder(img)) if self.modulate and img is not None else None
 

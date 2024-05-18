@@ -9,7 +9,7 @@ from fastmri.data import transforms as T
 from fastmri.data.subsample import RandomMaskFunc
 
 class MRIDataset(Dataset):
-    def __init__(self, path: str, filter_func: Optional[Callable] = None, transform: Optional[Callable] = None, undersampled = True):
+    def __init__(self, path: str, filter_func: Optional[Callable] = None, transform: Optional[Callable] = None, undersampled = True, number_of_samples = None):
         """
         Args:
             path: Path to files
@@ -20,18 +20,24 @@ class MRIDataset(Dataset):
         self.transform = transform
         self.samples = []
         self.undersampled = undersampled
+        self.number_of_samples = number_of_samples
 
-        self._prepare_dataset(filter_func)
+        self._prepare_dataset(number_of_samples, filter_func)
 
-    def _prepare_dataset(self, filter_func: Optional[Callable] = None):
+    def _prepare_dataset(self, number_of_samples = None, filter_func: Optional[Callable] = None):
         """ Prepare the dataset by listing all file paths and the number of slices per file. """
+        samples = 0
         for file_path in self.files:
             if (filter_func and filter_func(file_path)) or not filter_func:
+                print(f"Reading file: {file_path}")
                 with h5py.File(file_path, 'r') as hf:
                     num_slices = hf['kspace'].shape[0]
                     for s in range(num_slices):
                         self.samples.append((file_path, s))
-                        return
+                        if number_of_samples: 
+                            samples += 1
+                            if samples >= number_of_samples: 
+                                return
 
     def __len__(self):
         return len(self.samples)
