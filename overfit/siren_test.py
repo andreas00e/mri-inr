@@ -178,3 +178,13 @@ class SirenWrapper(nn.Module):
             return F.mse_loss(out, img)
 
         return out
+    
+    def upscale(self, scale_factor): 
+        # print image shape with description
+        tensors = [torch.linspace(-1, 1, steps = self.image_height * scale_factor), torch.linspace(-1, 1, steps = self.image_width * scale_factor)]
+        mgrid = torch.stack(torch.meshgrid(*tensors, indexing = 'ij'), dim=-1)
+        coords = rearrange(mgrid, 'h w b -> (h w) b')
+        out = self.net(coords)
+        out = rearrange(out, '(h w) c -> () c h w', h = self.image_height * scale_factor, w = self.image_width * scale_factor)
+        out = out.squeeze(0)
+        return out

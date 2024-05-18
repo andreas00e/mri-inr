@@ -63,3 +63,5 @@ class Trainer:
             plt.axis('off')  # Turn off axis numbers and ticks
             plt.savefig('cat_out.png', bbox_inches='tight', pad_inches=0)
             plt.close()
+
+            torch.save(self.model.state_dict(), "model.pth")
