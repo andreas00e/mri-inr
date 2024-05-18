@@ -13,7 +13,7 @@ def create_tqdm_bar(iterable, desc):
     return tqdm(enumerate(iterable),total=len(iterable), ncols=150, desc=desc, file=sys.stdout)
 
 class Trainer:
-    def __init__(self, model, device, train_dataset, val_dataset, lr=1e-4, batch_size=1):
+    def __init__(self, model, device, train_dataset, val_dataset, lr=1e-3, batch_size=1):
         self.model = model.to(device)
         self.device = device
         self.train_dataset = train_dataset
@@ -57,8 +57,9 @@ class Trainer:
             if img.is_cuda:
                 img = img.cpu()
 
-            # display rgb image
-            plt.imshow(img.squeeze().permute(1, 2, 0))
+            # display greyscale image
+            
+            plt.imshow(img.squeeze(),cmap='gray')
             plt.axis('off')  # Turn off axis numbers and ticks
             plt.savefig('cat_out.png', bbox_inches='tight', pad_inches=0)
             plt.close()
