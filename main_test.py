@@ -5,19 +5,20 @@ from overfit.trainer_test import Trainer
 from torchvision import transforms, datasets
 import matplotlib.pyplot as plt
 from overfit.dataset_test import TestDataset
+from data.transformations import scale_mri_tensor_advanced
 
 def main():
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     transform = transforms.Compose([
-        transforms.Lambda(lambda x: x.unsqueeze(0)),  # Ensure there is a channel dimension
-        transforms.Normalize(mean=[0.5], std=[0.5]), 
-        transforms.Lambda(lambda x: x.squeeze(0)),    
+        scale_mri_tensor_advanced   
         ])
-
+    
     # Load dataset
-    train_dataset = TestDataset()
+    train_dataset = TestDataset(
+        path='../../dataset/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform, cat=False
+    )
 
     net = SirenNet(
         dim_in = 2,                        # input dimension, ex. 2d coor
@@ -30,15 +31,15 @@ def main():
 
     wrapper = SirenWrapper(
         net,
-        image_width = train_dataset[0].shape[1],
-        image_height = train_dataset[0].shape[0]
+        image_width = 320,
+        image_height = 640
     )
 
     # Create trainer instance
     trainer = Trainer(model=wrapper, device=device, train_dataset=train_dataset, val_dataset=train_dataset, batch_size=1)
 
     # Start training
-    trainer.train(num_epochs=150)
+    trainer.train(num_epochs=600)
 
 if __name__ == '__main__':
     main()
