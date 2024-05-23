@@ -234,12 +234,14 @@ class ModulatedSiren(nn.Module):
     def upscale(self, scale_factor, img = None): 
         mods = self.modulator(self.encoder(img)) if self.modulate and img is not None else None
 
-        tensors = [torch.linspace(-1, 1, steps = self.image_height * scale_factor), torch.linspace(-1, 1, steps = self.image_width * scale_factor)]
+        tensors = [torch.linspace(-1, 1, steps = self.image_height * scale_factor)
+                   , torch.linspace(-1, 1, steps = self.image_width * scale_factor)]
         mgrid = torch.stack(torch.meshgrid(*tensors, indexing = 'ij'), dim=-1)
         coords = rearrange(mgrid, 'h w b -> (h w) b')
 
         out = self.net(coords, mods)
-        out = rearrange(out, '(h w) c -> () c h w', h = self.image_height * scale_factor, w = self.image_width * scale_factor)
+        out = rearrange(out, '(h w) c -> () c h w'
+                        , h = self.image_height * scale_factor, w = self.image_width * scale_factor)
         out = out.squeeze(0)
         return out
     

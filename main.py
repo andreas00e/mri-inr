@@ -4,7 +4,7 @@ from networks.networks import ModulatedSiren, SirenNet
 from trainer.trainer import Trainer
 from torchvision import transforms, datasets
 import argparse
-from utils.visualization import upscale_from_siren
+from utils.visualization import retrieve_from_siren
 from data.transformations import scale_mri_tensor_advanced
 
 def main():
@@ -16,9 +16,20 @@ def main():
 
     if args.visualize:
         if args.visualize == 'siren':
-            upscale_from_siren(model_path="model_checkpoints/siren_model.pth", upscale_factor=2, file_name="siren")
+            retrieve_from_siren(model_path="model_checkpoints/siren_model.pth", file_name="siren")
         elif args.visualize == 'modulated':
-            print("Not implemented yet.")
+            transform = transforms.Compose([
+                scale_mri_tensor_advanced
+            ])
+            train_dataset = MRIDataset(
+            path='../../dataset/fastmri/brain/visualize', filter_func=(lambda x: 'FLAIR' in x), transform=transform, number_of_samples = 10
+            )
+
+            for i in range(10):
+                img = train_dataset[i]
+                img = img.squeeze().unsqueeze(0)
+                retrieve_from_siren(model_path="model_checkpoints/modulated_siren_model.pth", file_name=f"./output/modulated_{i}", img = img)
+            
     else: 
         # Setup device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -46,7 +57,7 @@ def main():
         )
 
         # Create trainer instance
-        trainer = Trainer(model=model, device=device, train_dataset=train_dataset, batch_size=10)
+        trainer = Trainer(model=model, device=device, train_dataset=train_dataset, batch_size=1)
 
         # Start training
         trainer.train(num_epochs=15000)

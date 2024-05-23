@@ -41,7 +41,7 @@ def show_image(image, cmap='gray'):
     plt.axis('off')
     plt.show()
 
-def upscale_from_siren(model_path = 'model.pth', upscale_factor=4, file_name='output'): 
+def retrieve_from_siren(model_path = 'model.pth', upscale_factor=-1, file_name='output', img = None): 
 
     model = ModulatedSiren(
             image_width=320,  # Adjust based on actual image dimensions
@@ -52,6 +52,7 @@ def upscale_from_siren(model_path = 'model.pth', upscale_factor=4, file_name='ou
             num_layers=5,
             latent_dim=256,
             dropout=0.1,
+            modulate= (img is not None)
     )
 
     model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
@@ -59,20 +60,22 @@ def upscale_from_siren(model_path = 'model.pth', upscale_factor=4, file_name='ou
     with torch.no_grad():
         model.eval()
 
-        img = model.upscale(upscale_factor)
-        original_image = model()
+        if upscale_factor > 0:
+            reconstructed_image = model.upscale(upscale_factor, img)
+        else:
+            reconstructed_image = model(img)
 
         if img.is_cuda:
-            img = img.cpu()
-            original_image = original_image.cpu()
+            reconstructed_image = reconstructed_image.cpu()
 
-        # display greyscale image
-        plt.imshow(img.squeeze(),cmap='gray')
+        plt.imshow(reconstructed_image.squeeze(),cmap='gray')
         plt.axis('off')  # Turn off axis numbers and ticks
-        plt.savefig(f"{file_name}_upscaled.png", bbox_inches='tight', pad_inches=0, dpi=1200)
+        plt.savefig(f"{file_name}_reconstructed.png", bbox_inches='tight', pad_inches=0, dpi=1200)
         plt.close()
 
-        plt.imshow(original_image.squeeze(),cmap='gray')
-        plt.axis('off')  # Turn off axis numbers and ticks
-        plt.savefig(f"{file_name}_original.png", bbox_inches='tight', pad_inches=0, dpi=1200)
-        plt.close()
+        if img is not None:
+            plt.imshow(img.squeeze(),cmap='gray')
+            plt.axis('off')
+            plt.savefig(f"{file_name}_gt.png", bbox_inches='tight', pad_inches=0, dpi=1200)
+            plt.close()
+
