@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from einops import rearrange
 from torchvision import models
 from torchvision.models import resnet18, ResNet18_Weights
+from utils.time_keeper import time_function
 
 def cast_tuple(val, repeat = 1):
     return val if isinstance(val, tuple) else ((val,) * repeat)
@@ -52,6 +53,7 @@ class Siren(nn.Module):
         if bias is not None:
             bias.uniform_(-w_std, w_std)
 
+    @time_function
     def forward(self, x):
         out =  F.linear(x, self.weight, self.bias)
         out = self.activation(out)
@@ -96,6 +98,7 @@ class SirenNet(nn.Module):
         final_activation = nn.Identity() if final_activation is None else final_activation
         self.last_layer = Siren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, activation = final_activation)
 
+    @time_function
     def forward(self, x, mods = None):
         mods = cast_tuple(mods, self.num_layers)
 
@@ -122,6 +125,7 @@ class Modulator(nn.Module):
                 nn.ReLU()
             ))
 
+    @time_function
     def forward(self, z):
         x = z
         hiddens = []
@@ -157,6 +161,7 @@ class Encoder(nn.Module):
 
         return model, num_features
     
+    @time_function
     def forward(self, x):
         # Use the ResNet for feature extraction
         x = x.unsqueeze(1)
@@ -219,6 +224,7 @@ class ModulatedSiren(nn.Module):
         mgrid = rearrange(mgrid, 'h w b -> (h w) b')
         self.register_buffer('grid', mgrid)
 
+    @time_function
     def forward(self, img = None):
         batch_size = img.shape[0] if img is not None else 1
 

@@ -7,6 +7,7 @@ from typing import List, Optional, Callable
 import fastmri
 from fastmri.data import transforms as T
 from fastmri.data.subsample import RandomMaskFunc
+from utils.time_keeper import time_function
 
 class MRIDataset(Dataset):
     def __init__(self, path: str, filter_func: Optional[Callable] = None, transform: Optional[Callable] = None, undersampled = True, number_of_samples = None):
@@ -42,6 +43,7 @@ class MRIDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
+    @time_function
     def __getitem__(self, idx):
         file_path, slice_idx = self.samples[idx]
         with h5py.File(file_path, 'r') as hf:

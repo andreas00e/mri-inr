@@ -60,7 +60,7 @@ def main():
         trainer = Trainer(model=model, device=device, train_dataset=train_dataset, batch_size=1)
 
         # Start training
-        trainer.train(num_epochs=15000)
+        trainer.train(num_epochs=10)
 
 if __name__ == '__main__':
     main()

@@ -6,12 +6,13 @@ from datetime import datetime
 from tqdm import tqdm
 from utils.visualization import show_batch, show_image
 import sys
+from utils.time_keeper import time_function, time_keeper
 
 def create_tqdm_bar(iterable, desc):
     return tqdm(enumerate(iterable),total=len(iterable), ncols=150, desc=desc, file=sys.stdout)
 
 class Trainer:
-    def __init__(self, model, device, train_dataset, val_dataset = None, lr=1e-4, batch_size=1, validation=False, output_name = "output"):
+    def __init__(self, model, device, train_dataset, val_dataset = None, lr=1e-4, batch_size=1, validation=False, output_name = "output", timing = False):
         self.model = model.to(device)
         self.device = device
         self.train_dataset = train_dataset
@@ -24,7 +25,9 @@ class Trainer:
         self.writer = SummaryWriter(log_dir=f"runs/{datetime.now().strftime('%Y%m%d-%H%M%S')}")
         self.validation = validation
         self.output_name = output_name
+        self.timing = timing
 
+    @time_function
     def train(self, num_epochs):
         validation_loss = 0
         for epoch in range(num_epochs):
@@ -67,7 +70,9 @@ class Trainer:
                         # Update the tensorboard logger.
                         self.writer.add_scalar(f'Validation Loss', validation_loss / (val_iteration + 1), epoch * len(self.val_loader) + val_iteration)
         
+            
         self.writer.close()
+        time_keeper.summary()
 
         with torch.no_grad():
             torch.save(self.model.state_dict(), f"{self.output_name}_model.pth")
