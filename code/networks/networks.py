@@ -66,11 +66,10 @@ class SirenNet(nn.Module):
         dim_hidden,
         dim_out,
         num_layers,
-        w0 = 1.,
-        w0_initial = 30.,
-        use_bias = True,
-        final_activation = None,
-        dropout = 0.
+        w0,
+        w0_initial,
+        use_bias,
+        dropout
     ):
         super().__init__()
         self.num_layers = num_layers
@@ -93,8 +92,7 @@ class SirenNet(nn.Module):
 
             self.layers.append(layer)
 
-        final_activation = nn.Identity() if final_activation is None else final_activation
-        self.last_layer = Siren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias, activation = final_activation)
+        self.last_layer = Siren(dim_in = dim_hidden, dim_out = dim_out, w0 = w0, use_bias = use_bias)
 
     def forward(self, x, mods = None):
         mods = cast_tuple(mods, self.num_layers)
@@ -177,12 +175,11 @@ class ModulatedSiren(nn.Module):
         dim_out,
         num_layers,
         latent_dim,
-        w0 = 1.,
-        w0_initial = 30.,
-        use_bias = True,
-        final_activation = None,
-        dropout = 0., 
-        modulate = True
+        w0,
+        w0_initial,
+        use_bias,
+        dropout, 
+        modulate
     ):        
         super().__init__()
 
@@ -195,14 +192,13 @@ class ModulatedSiren(nn.Module):
         self.modulate = modulate
 
         self.net = SirenNet(
-            dim_in = 2,
+            dim_in = dim_in,
             dim_hidden = dim_hidden,
             dim_out = dim_out,
             num_layers = num_layers,
             w0 = w0,
             w0_initial = w0_initial,
             use_bias = use_bias,
-            final_activation = final_activation,
             dropout = dropout
         )
 

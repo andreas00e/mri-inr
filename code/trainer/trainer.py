@@ -11,7 +11,7 @@ def create_tqdm_bar(iterable, desc):
     return tqdm(enumerate(iterable),total=len(iterable), ncols=150, desc=desc, file=sys.stdout)
 
 class Trainer:
-    def __init__(self, model, device, train_dataset, val_dataset = None, lr=1e-4, batch_size=1, validation=False, output_name = "output"):
+    def __init__(self, model, device, train_dataset, val_dataset = None, lr=1e-4, batch_size=1, output_name = "output"):
         self.model = model.to(device)
         self.device = device
         self.train_dataset = train_dataset
@@ -21,8 +21,7 @@ class Trainer:
             self.val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        self.writer = SummaryWriter(log_dir=f"runs/{datetime.now().strftime('%Y%m%d-%H%M%S')}")
-        self.validation = validation
+        self.writer = SummaryWriter(log_dir=f"../output/runs/{datetime.now().strftime('%Y%m%d-%H%M%S')}")
         self.output_name = output_name
 
     def train(self, num_epochs):
@@ -49,7 +48,7 @@ class Trainer:
                 self.writer.add_scalar('Training Loss', loss.item(), epoch * len(self.train_loader) + train_iteration)
 
             # Validation
-            if self.validation and self.val_dataset is not None:
+            if self.val_dataset is not None:
                 self.model.eval()
                 val_loop = create_tqdm_bar(self.val_loader, desc=f'Validation Epoch [{epoch}/{num_epochs}]')
                 validation_loss = 0

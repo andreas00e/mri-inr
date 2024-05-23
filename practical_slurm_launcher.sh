@@ -20,4 +20,4 @@ conda activate adlm
 
 cd "/vol/aimspace/projects/practical_SoSe24/mri_inr/code/mri-inr/"
 
-python3 main.py
+python3 ./code/main.py

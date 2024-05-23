@@ -70,12 +70,12 @@ def retrieve_from_siren(model_path = 'model.pth', upscale_factor=-1, file_name='
 
         plt.imshow(reconstructed_image.squeeze(),cmap='gray')
         plt.axis('off')  # Turn off axis numbers and ticks
-        plt.savefig(f"{file_name}_reconstructed.png", bbox_inches='tight', pad_inches=0, dpi=1200)
+        plt.savefig(f"../output/images/{file_name}_reconstructed.png", bbox_inches='tight', pad_inches=0, dpi=1200)
         plt.close()
 
         if img is not None:
             plt.imshow(img.squeeze(),cmap='gray')
             plt.axis('off')
-            plt.savefig(f"{file_name}_gt.png", bbox_inches='tight', pad_inches=0, dpi=1200)
+            plt.savefig(f"../output/images/{file_name}_gt.png", bbox_inches='tight', pad_inches=0, dpi=1200)
             plt.close()
 

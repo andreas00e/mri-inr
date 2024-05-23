@@ -1,0 +1,30 @@
+# Configuration for MRIDataset
+mri_path: "/path/to/mri/dataset"
+mri_transform: ["transform1", "transform2"]
+mri_undersampled: true
+mri_num_samples: 500
+
+# Configuration for SirenNet
+siren_dim_in: 2
+siren_dim_hidden: 256
+siren_dim_out: 3
+siren_num_layers: 5
+siren_w0: 1.0
+siren_w0_initial: 30.0
+siren_use_bias: true
+siren_dropout: 0.1
+siren_final_activation: "tanh"
+
+# Configuration for ModulatedSiren
+mod_siren_image_width: 256
+mod_siren_image_height: 256
+mod_siren_modulate: true
+
+# Configuration for Trainer
+trainer_device: "cuda"
+trainer_train_dataset: "/path/to/train/dataset"
+trainer_val_dataset: "/path/to/val/dataset"
+trainer_lr: 0.0001
+trainer_batch_size: 16
+trainer_validation: true
+trainer_output_name: "training_output"
