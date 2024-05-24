@@ -62,3 +62,26 @@ class MRIDataset(Dataset):
             image_abs = self.transform(image_abs)
 
         return image_abs
+
+class TransformedMRIDataset(Dataset): 
+    def __init__(self, path):
+        self.path = path
+        self.files = [os.path.join(path, f) for f in os.listdir(path) if f.endswith(".h5")]
+        self.samples = []
+        
+        self._prepareDataset()
+    
+    def _prepareDataset(self):
+        for file in self.files: 
+            with h5py.File(file, "r") as hf: 
+                keys = list(hf.keys())
+                for key in keys: 
+                    self.samples.append(hf[key])
+        return 
+    
+    def __len__(self): 
+        return len(self.samples[0].shape[0])
+    
+    def __getitem__(self, index): 
+        return self.samples[0][index]
+        
