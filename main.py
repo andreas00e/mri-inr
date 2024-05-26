@@ -1,5 +1,5 @@
 import torch
-from data.dataset import MRIDataset
+from data.dataset import MRIDataset, TransformedMRIDataset
 from networks.networks import ModulatedSiren, SirenNet
 from trainer.trainer import Trainer
 from torchvision import transforms, datasets
@@ -14,7 +14,8 @@ def main():
 
     args = parser.parse_args()
 
-    if args.visualize:
+    # if args.visualize:
+    if False: 
         if args.visualize == 'siren':
             retrieve_from_siren(model_path="model_checkpoints/siren_model.pth", file_name="siren")
         elif args.visualize == 'modulated':
@@ -34,14 +35,21 @@ def main():
         # Setup device
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+        """
         transform = transforms.Compose([
             scale_mri_tensor_advanced
             ])
+        
 
         # Load dataset
         train_dataset = MRIDataset(
-            path='../../dataset/fastmri/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform, number_of_samples = 10
+            path='../dataset/brain/singlecoil_train', filter_func=(lambda x: 'FLAIR' in x), transform=transform, number_of_samples = 10
         )
+        print(train_dataset[0].shape)
+        """
+    
+        train_dataset = TransformedMRIDataset(path="../transformed_dataset/brain/singlecoil_train/")
+        # val_dataset = TransformedMRIDataset(path="../transformed_dataset/brain/singlecoin_val")
 
         # Initialize the model
         model = ModulatedSiren(
@@ -60,7 +68,7 @@ def main():
         trainer = Trainer(model=model, device=device, train_dataset=train_dataset, batch_size=1)
 
         # Start training
-        trainer.train(num_epochs=15000)
+        trainer.train(num_epochs=2)
 
 if __name__ == '__main__':
     main()

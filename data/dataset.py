@@ -66,6 +66,7 @@ class MRIDataset(Dataset):
 class TransformedMRIDataset(Dataset): 
     def __init__(self, path):
         self.path = path
+        print(path)
         self.files = [os.path.join(path, f) for f in os.listdir(path) if f.endswith(".h5")]
         self.samples = []
         
@@ -74,14 +75,19 @@ class TransformedMRIDataset(Dataset):
     def _prepareDataset(self):
         for file in self.files: 
             with h5py.File(file, "r") as hf: 
+                # print(f"Hf type: {type(hf)}")
                 keys = list(hf.keys())
+                # print(f"Keys: {keys}")
                 for key in keys: 
-                    self.samples.append(hf[key])
+                    # print(type(key))
+                    self.samples.append(hf[key][()])
+        # print(f"Sample list length: {self.samples[0].shape[0]}")
+        # print(f"Sample list type:{len(self.samples[0])}")
         return 
     
     def __len__(self): 
-        return len(self.samples[0].shape[0])
+        return self.samples[0].shape[0]
     
     def __getitem__(self, index): 
-        return self.samples[0][index]
+        return torch.from_numpy(self.samples[0][index]).float()
         
